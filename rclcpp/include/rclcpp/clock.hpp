@@ -17,6 +17,7 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
 
 #include "rclcpp/macros.hpp"
 #include "rclcpp/time.hpp"
@@ -96,6 +97,10 @@ public:
   rcl_clock_type_t
   get_clock_type() const noexcept;
 
+  RCLCPP_PUBLIC
+  std::mutex &
+  get_clock_mutex() noexcept;
+
   // Add a callback to invoke if the jump threshold is exceeded.
   /**
    * These callback functions must remain valid as long as the
@@ -133,9 +138,10 @@ private:
     bool before_jump,
     void * user_data);
 
-  /// Internal storage backed by rcl
-  std::shared_ptr<rcl_clock_t> rcl_clock_;
-  rcl_allocator_t allocator_;
+  /// Private internal storage
+  class Impl;
+
+  std::shared_ptr<Impl> impl_;
 };
 
 }  // namespace rclcpp
