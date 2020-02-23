@@ -212,6 +212,34 @@ public:
     callback(future);
   }
 
+  template<typename TimeRepT = int64_t, typename TimeT = std::milli>
+  SharedResponse
+  sync_send_request(SharedRequest request, std::chrono::duration<TimeRepT, TimeT> timeout = std::chrono::duration<TimeRepT, TimeT>(-1))
+  {
+      /*
+       * if executor associated
+       *    async_send_request
+       *    future.wait_for(timeout)
+       * else
+       *    async_send_request
+       *    spin_until_future_complete
+       *
+       * return response
+       */
+      auto test = get_rcl_node_handle();
+      std::atomic_bool& has_executor = test->get_associated_with_executor_atomic();
+      SharedFuture response = async_send_request(request);
+
+      if(!has_executor.load()) {
+      }
+
+      std::future_status status = response.wait_for(timeout);
+      if (status == std::future_status::ready) {
+          return response.get();
+      }
+      return nullptr;
+  }
+
   SharedFuture
   async_send_request(SharedRequest request)
   {
